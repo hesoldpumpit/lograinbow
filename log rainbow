@@ -1,0 +1,42 @@
+import pandas as pd
+import numpy as np
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+
+# go to https://www.quandl.com/data/BCHAIN/MKPRU-Bitcoin-Market-Price-USD make an account (throw away or real email
+# up to u) and save the csv as btcdaily.csv to the same folder you save this code.
+
+# data processing
+df = pd.read_csv('btcdaily.csv')
+df = df[ df['Value'] > 0]
+df = df.iloc[::-1]
+df['Date'] = pd.to_datetime(df['Date'])
+
+# logarithmic function
+def funct(x, p1, p2):
+    return p1*np.log(x) + p2
+
+
+ydata = np.log(df['Value'])
+xdata = [ x+1 for x in range(len(df))]
+
+popt, pcov = curve_fit(funct, xdata, ydata, p0=(3.0, -10))
+
+extended_dates = pd.date_range(df['Date'].iloc[0], '2022-01-01')
+
+fittedYdata = funct(np.array([x+1 for x in range(len(extended_dates))]), popt[0], popt[1])
+
+# plotting
+
+plt.style.use('dark_background')
+plt.semilogy(df['Date'], df['Value'])
+
+for i in range(-4,4):
+    #plt.plot(df['Date'], np.exp(fittedYdata+i))
+    plt.fill_between(extended_dates, np.exp(fittedYdata + i - 1), np.exp(fittedYdata + i), alpha=0.5)
+
+plt.ylim(bottom=1)
+plt.ylabel('Price')
+plt.xlabel('Date')
+
+plt.show()
